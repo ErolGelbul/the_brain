@@ -83,6 +83,8 @@ stimulation.
   <img src="images/ss0.png">
 </p>
 
+<p align="right">(<a href="#top">back to top</a>)</p>
+
 ## 2.2 Simulating 1000 Neurons
 
 This section represents the implementation of a neural circuit consisting of
@@ -130,6 +132,7 @@ In summary, this code sets up a neural circuit of 1000 neurons with distinct
 excitatory and inhibitory properties, initializes the membrane potential and
 variable u, and defines the synaptic weights matrix for all-to-all connections.
 
+<p align="right">(<a href="#top">back to top</a>)</p>
 
 ## 2.3 Visualize
 
@@ -159,42 +162,157 @@ The resulting raster plot provides a visual representation of the firing activit
   <img src="images/ss1.png">
 </p>
 
+<p align="right">(<a href="#top">back to top</a>)</p>
 
 ## 2.4 Visualize the Population Spiking Activity
 
+This section is responsible for visualizing the population spiking activity
+of the neurons in the circuit over time, both in the time domain and the
+frequency domain.
 
+1. Initialize population spiking activity array `popact`:
+   - popact = np.zeros(simulation_time): Create an array of zeros with the same size as `simulation_time`.
 
+2. Loop over time and find the units that spiked at that time:
+   - for ti in range(simulation_time):
+     - popact[ti] = np.sum(firings[0,:]==ti) / (Ne+Ni): For each time step `ti`, calculate the proportion of neurons that fired at that time by dividing the number of firing neurons by the total number of neurons (Ne+Ni).
 
+3. Create a figure with two subplots:
+   - fig, ax = plt.subplots(1, 2, figsize=(15, 5)): Create a new figure with two subplots (axes) arranged horizontally, and set the figure size to 15 inches wide and 5 inches tall.
 
+4. Time-domain plot:
+   - ax[0].plot(popact): Plot the population spiking activity over time.
+   - ax[0].set_xlabel('Time (ms)'): Set the x-axis label to "Time (ms)".
+   - ax[0].set_ylabel('Proportion of neurons active'): Set the y-axis label to "Proportion of neurons active".
+   - ax[0].set_title('Time domain'): Set the title of the subplot
 
-
-
-
-
-
-
-
-
-
-
-
-
-<!-- CONTRIBUTING -->
-## Contributing
-
-If you would like to add any extra features to the optimisation simulation, feel free to fork and create a pull request. Thank you!
-
-1. Fork the Project
-2. Create your Feature Branch (`git checkout -b feature/AmazingFeature`)
-3. Commit your Changes (`git commit -m 'Add some AmazingFeature'`)
-4. Push to the Branch (`git push origin feature/AmazingFeature`)
-5. Open a Pull Request
+<p align="center">
+  <img src="images/ss2.png">
+</p>
 
 <p align="right">(<a href="#top">back to top</a>)</p>
 
+## 2.5 Running Function
+
+This code snippet defines a function `simCircuit(I)` to run the neural network
+simulation with a given input stimulus `I`.
+
+
+1. Define the function `simCircuit(I)`:
+   - def simCircuit(I):
+
+2. Initialize `firings` array:
+   - firings = np.array([[], []]): Create an empty 2D array to store the firing times and neuron indices.
+
+3. Set initial values of `v` and `u`:
+   - v = -65 * np.ones(Ne + Ni): Initialize membrane potentials `v` for all neurons to -65.
+   - u = b * v: Initialize the recovery variable `u` by multiplying `b` with `v`.
+
+4. Loop through the simulation time:
+   - for t in range(len(I)):
+
+5. Define the stimulation for each neuron:
+   - stim = np.hstack((4 * np.random.randn(Ne), 1 * np.random.randn(Ni))) + I[t]: Create a random stimulation for excitatory and inhibitory neurons, and add the input stimulus `I[t]`.
+
+6. Check if an action potential occurred and update `firings`:
+   - fired = np.where(v >= 30)[0]: Find the indices of neurons that fired (membrane potential >= 30).
+   - tmp = np.stack((np.tile(t, len(fired)), fired)): Create a temporary array with firing times and neuron indices.
+   - firings = np.concatenate((firings, tmp), axis=1): Concatenate the temporary array with the `firings` array.
+
+7. Update membrane variables for cells that fired:
+   - v[fired] = c[fired]: Reset membrane potentials `v` of fired neurons to their respective `c` values.
+   - u[fired] = u[fired] + d[fired]: Update the recovery variable `u` of fired neurons by adding their respective `d` values.
+
+8. Update membrane variables for down-stream cells:
+   - stim += np.sum(S[:, fired], axis=1): Add the sum of synaptic weights `S` from fired neurons to the stimulation.
+
+9. Update membrane voltage and recovery variable:
+   - v += .04 * v**2 + 5 * v + 140 - u + stim: Update membrane potentials `v` using the Izhikevich model equation.
+   - u += a * (b * v - u): Update the recovery variable `u` using the Izhikevich model equation.
+
+10. Return `firings` array:
+   - return firings: The function returns the `firings` array containing the firing times and neuron indices.
+
+<p align="right">(<a href="#top">back to top</a>)</p>
+
+## 2.6 Visualizing Function
+
+This code snippet defines a function `plotPopActivity(firings)` to visualize the
+results of the neural network simulation, including the population spiking
+activity, time-domain plot, and frequency-domain plot.
+
+1. Define the function `plotPopActivity(firings)`:
+   - def plotPopActivity(firings):
+
+2. Calculate the maximum number of time points:
+   - npnts = int(np.max(firings[0, :]) + 1): Find the maximum firing time and add 1, since it starts at 0.
+
+3. Initialize population spiking activity array `popact`:
+   - popact = np.zeros(npnts): Create an array of zeros with the same size as `npnts`.
+
+4. Loop over time and find the units that spiked at that time:
+   - for ti in range(npnts):
+     - popact[ti] = np.sum(firings[0, :] == ti) / (Ne + Ni): For each time step `ti`, calculate the proportion of neurons that fired at that time by dividing the number of firing neurons by the total number of neurons (Ne + Ni).
+
+5. Calculate amplitude spectrum `popactX`:
+   - popactX = np.abs(np.fft.fft(popact - np.mean(popact))): Compute the amplitude spectrum by applying the Fast Fourier Transform (FFT) to the detrended population activity.
+   - hz = np.linspace(0, 500, int(npnts / 2 + 1)): Create a frequency axis from 0 to 500 Hz with a length equal to half of the time points plus 1.
+
+6. Create a figure with three subplots:
+   - fig, ax = plt.subplots(1, 3, figsize=(20, 5)): Create a new figure with three subplots (axes) arranged horizontally, and set the figure size to 20 inches wide and 5 inches tall.
+
+7. Population spiking plot:
+   - ax[0].plot(firings[0, :], firings[1, :], 'k.', markersize=1): Plot the firing events as black dots (indicated by 'k.') with a marker size of 1.
+   - ax[0].set_xlabel('Time (ms)'): Set the x-axis label to "Time (ms)".
+   - ax[0].set_ylabel('Neuron #'): Set the y-axis label to "Neuron #".
+   - ax[0].set_title('Population spiking'): Set the title of the subplot.
+
+8. Time-domain plot:
+   - ax[1].plot(popact): Plot the population spiking activity over time.
+   - ax[1].set_xlabel('Time (ms)'): Set the x-axis label to "Time (ms)".
+   - ax[1].set_ylabel('Proportion of neurons active'): Set the y-axis label to "Proportion of neurons active".
+   - ax[1].set_title('Time domain'): Set the title of the subplot.
+
+9. Frequency-domain plot:
+   - ax[2].plot(hz, popactX[:len(hz)], 'k', linewidth=3): Plot the amplitude spectrum as a black line (indicated by 'k') with a linewidth of 3.
+   - ax[2].set_xlim([0, 80]): Set the x-axis limits to 0-80 Hz.
+   - ax[2].set_xlabel('Frequency (Hz)'): Set the x-axis label to "Frequency (Hz)".
+   - ax[2].set_ylabel('Amplitude (a.u.)'): Set the y-axis label to "Amplitude (a.u.)".
+   - ax[2].set_title('Frequency domain
+
+<p align="right">(<a href="#top">back to top</a>)</p>
+
+## 2.7 Visualizing Function
+
+This code snippet presents experiments with different input patterns to the
+neural network simulation and visualizes the results using the `simCircuit()`
+and `plotPopActivity()` functions defined earlier.
+
+1. Create input patterns for the experiments:
+
+   - Option 1: A constant input of 1, with a negative input of -2 from time step 400 to 600.
+     - I = np.ones(1234)
+     - I[400:601] = -2
+
+   - Option 2: A quadratic input pattern ranging from -2 to 2.
+     - I = (np.linspace(-2, 2, 3001))**2
+
+   - Option 3: A sinusoidal input pattern with a frequency of 6 * pi.
+     - I = np.sin(np.linspace(0, 6 * np.pi, 2000) * 2)
+
+2. Run the simulation and plot the results:
+
+   - networkspikes = simCircuit(I): Run the neural network simulation with the chosen input pattern `I` and store the resulting firing activity in the `networkspikes` variable.
+   - plotPopActivity(networkspikes): Visualize the results of the neural network simulation using the `plotPopActivity()` function, which displays the population spiking activity, time-domain plot, and frequency-domain plot.
+
+<p align="center">
+  <img src="images/ss3.png">
+</p>
+
+<p align="right">(<a href="#top">back to top</a>)</p>
 
 <!-- CONTACT -->
-## Contact
+## 3. Contact
 
 Erol Gelbul - [Website](http://www.erolgelbul.com) - erolgelbul@gmail.com
 
