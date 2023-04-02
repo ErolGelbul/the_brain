@@ -314,7 +314,7 @@ and `plotPopActivity()` functions defined earlier.
 <!-- CONTACT -->
 ## 3. Contact
 
-Erol Gelbul - [Website](http://www.erolgelbul.com) - erolgelbul@gmail.com
+Erol Gelbul - [Website](http://www.erolgelbul.com)
 
 Project Link: [The Brain](https://github.com/ErolGelbul/the_brain)
 
